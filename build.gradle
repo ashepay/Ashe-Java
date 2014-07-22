@@ -1,0 +1,83 @@
+apply plugin: "java"
+apply plugin: "idea"
+apply plugin: "maven"
+apply plugin: "project-report"
+apply plugin: "pmd"
+apply plugin: "application"
+apply plugin: "build-dashboard"
+apply plugin: "codenarc"
+
+applicationDefaultJvmArgs = ["-Dfile.encoding=UTF=8"]
+
+idea {
+    project {
+        jdkName = "1.6"
+        languageLevel = "1.6"
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "src/main/java"
+        }
+        resources {
+            srcDir "src/main/resources"
+        }
+    }
+}
+
+compileJava.options.debug = true
+compileJava.options.listFiles = false
+compileJava.options.warnings = true
+compileJava.options.deprecation = true
+compileJava.options.verbose = false
+
+idea.project.ipr {
+    beforeMerged { project ->
+        project.modulePaths.clear()
+    }
+    withXml { provider ->
+        provider.node.component.find { it.@name == "VcsDirectoryMappings" }.mapping.@vcs = "Git"
+    }
+}
+
+idea.module.iml {
+    beforeMerged { module ->
+        module.dependencies.clear()
+    }
+    whenMerged { module ->
+        module.dependencies*.exported = true
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    gsonVersion = "2.2.4"
+    httpclientVersion = "4.3.4"
+}
+
+dependencies {
+    /*Utils*/
+    compile "com.google.code.gson:gson:$gsonVersion"
+    compile "org.apache.httpcomponents:httpclient:$httpclientVersion"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.0"
+}
+
+jar {
+    doFirst {
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
+    manifest {
+        attributes ("Implementation-Version" : 1)
+        attributes ("Main-Class" : "")
+    }
+    exclude "META-INF/*.RSA", "META-INF/*.SF","META-INF/*.DSA"
+}
+
